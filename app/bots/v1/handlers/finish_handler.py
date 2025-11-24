@@ -9,7 +9,7 @@ from app.core.logging.logger import get_logger
 logger = get_logger()
 
 
-async def on_finish_handler(
+async def finish_handler(
     callback: CallbackQuery,
     button: Button,
     dialog_manager: DialogManager,

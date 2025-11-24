@@ -2,10 +2,15 @@ from dependency_injector import containers, providers
 
 from app.core.settings.mongodb_settings import get_mongodb_settings
 from app.core.settings.task_queue_settings import get_task_queue_settings
+from app.infrastructure.mongodb.documents.bmi_category_document import (
+    BMICategoryDocument,
+)
+from app.infrastructure.mongodb.documents.bmi_record_document import CategoryName
 from app.infrastructure.mongodb.mongodb import MongoDB
 from app.infrastructure.task_queue.task_queue import TaskQueue
 from app.infrastructure.task_queue.task_queue_consumer import TaskQueueConsumer
 from app.infrastructure.task_queue.task_queue_producer import TaskQueueProducer
+from app.services.bmi_service import BMIService
 from app.services.healthcheck_service import HealthCheckService
 from app.services.telegram_webhook_service import TelegramWebhookService
 
@@ -32,3 +37,11 @@ class Container(containers.DeclarativeContainer):
     healthcheck_service = providers.Singleton(HealthCheckService, mongodb=mongodb)
 
     telegram_webhook_service = providers.Singleton(TelegramWebhookService)
+
+    bmi_category_document = providers.Singleton(
+        BMICategoryDocument, min_bmi=0.0, category_name=CategoryName.UNKNOWN
+    )
+
+    bmi_service = providers.Singleton(
+        BMIService, bmi_category_document=bmi_category_document
+    )

@@ -31,7 +31,7 @@ api_router = APIRouter(
     status_code=status.HTTP_200_OK,
 )
 @inject
-async def post_webhook(
+async def telegram_webhook(
     request: Request,
     response: Response,
     x_telegram_bot_api_webhook_secret: Annotated[

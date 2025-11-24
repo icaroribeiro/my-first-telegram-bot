@@ -1,4 +1,5 @@
 import asyncio
+import os
 import subprocess
 
 from app.core.logging.logger import get_logger
@@ -23,13 +24,20 @@ async def main() -> None:
 
     try:
         logger.info("Starting migrating Beanie...")
-        command = (
-            f'beanie migrate -uri "{mongodb_settings.uri}" '
-            f"-db {mongodb_settings.database} "
-            + "-p beanie/migrations "
-            + "--no-use-transaction"
-        )
-        result = subprocess.run(command, shell=True, check=False)
+        migration_path = os.path.join(os.getcwd(), "beanie", "migrations")
+        command_args = [
+            "beanie",
+            "migrate",
+            "-uri",
+            mongodb_settings.uri,
+            "-db",
+            mongodb_settings.database,
+            "-p",
+            migration_path,
+            "--no-use-transaction",
+        ]
+        logger.info(f"Executing command: {' '.join(command_args)}")
+        result = subprocess.run(command_args, shell=False, check=False)
         if result.returncode != 0:
             raise Exception(
                 f"Beanie migration failed with return code: {result.returncode}."

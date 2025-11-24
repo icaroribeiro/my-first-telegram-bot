@@ -9,7 +9,7 @@ from app.core.logging.logger import get_logger
 logger = get_logger()
 
 
-async def name_handler(
+async def greetings_handler(
     message: Message,
     message_input: MessageInput,
     dialog_manager: DialogManager,
