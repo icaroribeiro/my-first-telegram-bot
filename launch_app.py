@@ -8,8 +8,13 @@ logger = get_logger()
 def main() -> None:
     try:
         logger.info("Starting launching Application...")
-        command = "python app/main.py"
-        result = subprocess.run(command, shell=True, check=False)
+        command_args = [
+            "uv",
+            "run",
+            "app/main.py",
+        ]
+        logger.info(f"Executing command: {' '.join(command_args)}")
+        result = subprocess.run(command_args, shell=False, check=False)
         if result.returncode != 0:
             raise Exception(
                 f"Application launch failed with return code: {result.returncode}."

@@ -4,14 +4,12 @@ from aiogram_dialog import (
     StartMode,
 )
 
-from app.bots.v1.state_groups.intro_dialog_state_group import (
-    IntroDialogSG,
-)
+from app.bots.v1.state_groups.bmi_dialog_state_group import BMIDialogSG
 
 
 async def start_handler(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(
-        state=IntroDialogSG.greeting,
+        state=BMIDialogSG.greeting,
         mode=StartMode.RESET_STACK,
         data={
             "user_id": message.from_user.id,

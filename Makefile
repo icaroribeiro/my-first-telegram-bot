@@ -26,7 +26,7 @@ test-app:
 migrate-beanie:
 	uv run migrate_beanie.py
 
-# Application and MongoDB containers tasks.
+# Dockerized Application tasks.
 # --------------------------------------------------------------------------------------
 startup-app:
 	docker-compose up --build -d app
@@ -34,6 +34,8 @@ startup-app:
 shutdown-app:
 	docker-compose down -v app
 
+# Dockerized MongoDB tasks.
+# --------------------------------------------------------------------------------------
 startup-mongodb:
 	docker-compose up --build -d mongodb
 

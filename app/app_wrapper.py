@@ -4,7 +4,7 @@ from asyncio import create_task
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.filters import CommandStart, ExceptionTypeFilter
+from aiogram.filters import Command, CommandStart, ExceptionTypeFilter
 from aiogram.fsm.storage.base import DefaultKeyBuilder
 from aiogram.fsm.storage.pymongo import PyMongoStorage
 from aiogram.types import LinkPreviewOptions
@@ -15,13 +15,13 @@ from aiogram_dialog.api.exceptions import UnknownIntent, UnknownState
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 
-from app.api.v1.handlers.exception_handler import (
+from app.api.common.handlers.exception_handler import (
     ExceptionHandler,
 )
-from app.api.v1.middlewares.logging_middleware import (
+from app.api.common.middlewares.logging_middleware import (
     LoggingMiddleware,
 )
-from app.api.v1.routers.healthcheck_router import (
+from app.api.common.routers.healthcheck_router import (
     api_router as healthcheck_router_v1,
 )
 from app.api.v1.routers.telegram_webhook_router import (
@@ -29,23 +29,28 @@ from app.api.v1.routers.telegram_webhook_router import (
 )
 from app.app_error import AppError
 from app.bots.v1.commands.set_default_commands import set_default_commands
-from app.bots.v1.dialogs.intro_dialog import (
-    intro_dialog as intro_dialog_v1,
+from app.bots.v1.dialogs.bmi_dialog import (
+    bmi_dialog as bmi_dialog_v1,
 )
-from app.bots.v1.handlers.on_unknown_intent_handler import (
-    on_unknown_intent_handler as on_unknown_intent_handler_v1,
+from app.bots.v1.handlers.exit_handler import (
+    exit_handler as exit_handler_v1,
 )
-from app.bots.v1.handlers.on_unknown_state_handler import (
-    on_unknown_state_handler as on_unknown_state_handler_v1,
-)
+from app.bots.v1.handlers.help_handler import help_handler as help_handler_v1
 from app.bots.v1.handlers.start_handler import (
     start_handler as start_handler_v1,
+)
+from app.bots.v1.handlers.unknown_intent_handler import (
+    unknown_intent_handler as unknown_intent_handler_v1,
+)
+from app.bots.v1.handlers.unknown_state_handler import (
+    unknown_state_handler as unknown_state_handler_v1,
 )
 from app.core.container.container import Container
 from app.core.logging.logger import get_logger
 from app.core.settings.app_settings import get_app_settings
 from app.core.settings.mongodb_settings import get_mongodb_settings
 from app.core.settings.telegram_settings import UpdateMethod, get_telegram_settings
+from app.infrastructure.mongodb.documents import get_documments
 from app.infrastructure.mongodb.mongodb import MongoDB
 from app.infrastructure.task_queue.task_queue_consumer import TaskQueueConsumer
 from app.services.telegram_webhook_service import TelegramWebhookService
@@ -76,9 +81,11 @@ class AppWrapper:
         )
         self._container.wire(
             modules=[
-                "app.api.v1.routers.healthcheck_router",
-                "app.api.v1.routers.telegram_webhook_router",
-            ]
+                "app.bots.v1.handlers.weight_change_handler",
+            ],
+            packages=[
+                "app.api.v1.routers",
+            ],
         )
         self._app = FastAPI(
             title="My First Telegram Bot API",
@@ -152,15 +159,17 @@ class AppWrapper:
         )
         self._dispatcher_v1.startup.register(set_default_commands)
         self._dispatcher_v1.message.register(start_handler_v1, CommandStart())
+        self._dispatcher_v1.message.register(help_handler_v1, Command("help"))
+        self._dispatcher_v1.message.register(exit_handler_v1, Command("exit"))
         self._dispatcher_v1.errors.register(
-            on_unknown_intent_handler_v1,
+            unknown_intent_handler_v1,
             ExceptionTypeFilter(UnknownIntent),
         )
         self._dispatcher_v1.errors.register(
-            on_unknown_state_handler_v1,
+            unknown_state_handler_v1,
             ExceptionTypeFilter(UnknownState),
         )
-        self._dispatcher_v1.include_router(router=intro_dialog_v1)
+        self._dispatcher_v1.include_router(router=bmi_dialog_v1)
         setup_dialogs(router=self._dispatcher_v1)
         self._app.state.bot_v1 = self._bot_v1
         self._app.state.dispatcher_v1 = self._dispatcher_v1
@@ -182,13 +191,15 @@ class AppWrapper:
         self._dispatcher_v1: Dispatcher = Dispatcher(storage=storage_v1)
         self._dispatcher_v1.startup.register(set_default_commands)
         self._dispatcher_v1.message.register(start_handler_v1, CommandStart())
+        self._dispatcher_v1.message.register(help_handler_v1, Command("help"))
+        self._dispatcher_v1.message.register(exit_handler_v1, Command("exit"))
         self._dispatcher_v1.errors.register(
-            on_unknown_intent_handler_v1, ExceptionTypeFilter(UnknownIntent)
+            unknown_intent_handler_v1, ExceptionTypeFilter(UnknownIntent)
         )
         self._dispatcher_v1.errors.register(
-            on_unknown_state_handler_v1, ExceptionTypeFilter(UnknownState)
+            unknown_state_handler_v1, ExceptionTypeFilter(UnknownState)
         )
-        self._dispatcher_v1.include_router(router=intro_dialog_v1)
+        self._dispatcher_v1.include_router(router=bmi_dialog_v1)
         setup_dialogs(router=self._dispatcher_v1)
         self._app.state.bot_v1 = self._bot_v1
         self._app.state.dispatcher_v1 = self._dispatcher_v1
@@ -264,6 +275,9 @@ class AppWrapper:
             except Exception as error:
                 logger.error(f"Error while starting TaskQueueConsumer: {error}")
                 raise
+
+        await self._mongodb.init_database(document_models=get_documments())
+
         logger.info("Application started successfully.")
 
     async def on_app_shutdown(self) -> None:

@@ -1,7 +1,7 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Response, status
 
-from app.api.v1.dtos.healthcheck_dto import HealthcheckDTO
+from app.api.common.dtos.healthcheck_dto import HealthcheckDTO
 from app.core.container.container import Container
 from app.services.healthcheck_service import HealthCheckService
 
