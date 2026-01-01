@@ -6,5 +6,5 @@ class BMIDialogSG(StatesGroup):
     age = State()
     height = State()
     weight = State()
-    bmi_result = State()
+    bmi = State()
     finish = State()

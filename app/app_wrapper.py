@@ -268,7 +268,7 @@ class AppWrapper:
                 logger.error(f"Error while deleting webhook: {error}")
             polling_task = create_task(self._dispatcher_v1.start_polling(self._bot_v1))
             self._app.state.polling_task_v1 = polling_task
-        elif telegram_settings.mode == UpdateMethod.POLLING.value:
+        elif telegram_settings.mode == UpdateMethod.WEBHOOK.value:
             logger.info("Starting Telegram Webhook...")
             try:
                 await self._task_queue_consumer.start()

@@ -21,7 +21,7 @@ class TaskQueueConsumer:
         self.max_retries = max_retries
         self.initial_backoff_seconds = initial_backoff_seconds
         self.async_task_timeout_seconds = async_task_timeout_seconds
-        self.__running_task: asyncio.Task[Any] | None = None
+        self._running_task: asyncio.Task[Any] | None = None
         self.should_stop = asyncio.Event()
 
     async def _consume_task_with_retry(self, task_item: TaskItemModel) -> bool:
@@ -111,24 +111,24 @@ class TaskQueueConsumer:
                     )
 
     async def start(self) -> None:
-        if not self.__running_task:
+        if not self._running_task:
             logger.info(
                 "Starting TaskQueueConsumer background task. "
                 + f"Max retries: {self.max_retries}, "
                 + f"Timeout: {self.async_task_timeout_seconds}"
             )
             self.should_stop.clear()
-            self.__running_task = asyncio.create_task(self.__run_loop())
+            self._running_task = asyncio.create_task(self.__run_loop())
             logger.info("TaskQueueConsumer started.")
 
     async def stop(self) -> None:
-        if self.__running_task:
+        if self._running_task:
             logger.info("Stopping TaskQueueConsumer...")
             self.should_stop.set()
-            self.__running_task.cancel()
+            self._running_task.cancel()
             try:
-                await self.__running_task
+                await self._running_task
             except asyncio.CancelledError:
                 pass
-            self.__running_task = None
+            self._running_task = None
             logger.info("TaskQueueConsumer stopped.")

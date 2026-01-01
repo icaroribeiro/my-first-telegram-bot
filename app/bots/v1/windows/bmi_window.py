@@ -16,6 +16,6 @@ bmi_window = Window(
         id="finish_bmi_calc",
         on_click=None,
     ),
-    state=BMIDialogSG.bmi_result,
+    state=BMIDialogSG.bmi,
     getter=bmi_window_getter,
 )

@@ -87,7 +87,7 @@ class Forward:
             await NewBMICategoryDocument.insert_many(
                 documents=bmi_categories_data, session=session
             )
-            logger.info(f"All documents from collection '{collection_name}' deleted.")
+            logger.info(f"All documents from collection '{collection_name}' inserted.")
         except Exception as error:
             message = f"Error while seeding initial data in collection '{collection_name}': {error}"
             logger.error(message)
